@@ -5,10 +5,202 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            background: #14151b;
+        }
+
+        .loader {
+            scale: 3;
+            width: 45px;
+            height: 45px;
+            transform: rotateZ(0deg);
+        }
+        .loader.loading {
+            animation-name: rotate-loader;
+            animation-duration: 0.8s;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-direction: normal;
+        }
+        .loader .loader-circle {
+            fill: #0275d8;
+            transition: fill 0.3s ease;
+        }
+        .loader .loader-path {
+            fill: transparent;
+            stroke: #14151b;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 40% 0% 40% 1000%;
+            stroke-dashoffset: -176%;
+        }
+        .loader.success, .loader.error {
+            animation-name: none;
+        }
+        .loader.success .loader-circle {
+            fill: #5cb85c;
+        }
+        .loader.success .loader-path {
+            animation-name: loader-success;
+            animation-duration: 0.5s;
+            animation-timing-function: ease-out;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+        .loader.error .loader-circle {
+            fill: #c9302c;
+        }
+        .loader.error .loader-path {
+            animation-name: loader-error;
+            animation-duration: 0.6s;
+            animation-timing-function: ease-out;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes rotate-loader {
+            0% {
+                transform: rotateZ(0deg);
+            }
+            100% {
+                transform: rotateZ(-360deg);
+            }
+        }
+        @keyframes loader-success {
+            0% {
+                stroke-dashoffset: -176%;
+            }
+            100% {
+                stroke-dashoffset: -44%;
+            }
+        }
+        @keyframes loader-error {
+            0% {
+                stroke-dasharray: 40% 0% 40% 1000%;
+                stroke-dashoffset: -176%;
+            }
+            35% {
+                stroke-dasharray: 40% 0% 40% 1000%;
+            }
+            100% {
+                stroke-dasharray: 55% 48% 55% 1000%;
+                stroke-dashoffset: -1;
+            }
+        }
+        .loader-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .loader-error {
+            position: absolute;
+            top: calc(100% + 35px);
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c9302c;
+            white-space: nowrap;
+            text-transform: uppercase;
+            transition: opacity .4s;
+        }
+        .loader-error.hide {
+            opacity: 0;
+        }
+    </style>
+
     <title>arg0NNY's BD plugins downloader</title>
 </head>
 <body>
-<div id="status"></div>
+<div class="loader-container">
+    <svg class="loader loading" viewBox="0 0 55 55" xml:space="preserve">
+        <circle class="loader-circle" cx="27.5" cy="27.5" r="27.5"/>
+        <path class="loader-path" d="M17.5,42.3l23.2-23.2L23.9,35.9l-17-17c3.4-8.1,11.3-13.7,20.6-13.7c12.3,0,22.3,10,22.3,22.3 s-10,22.3-22.3,22.3S5.2,39.8,5.2,27.5c0-3.1,0.6-6,1.7-8.6"/>
+    </svg>
+    <div class="loader-error hide"></div>
+</div>
+
+<script>
+    class Loader {
+
+        constructor(element) {
+            this.element = element;
+            this.spinning = 0;
+            this.state = null;
+            this.animationEndCallback = () => {
+                const errorNode = document.querySelector('.loader-error');
+
+                errorNode.innerText = this.error ?? '';
+                errorNode.classList.remove('hide');
+            }
+            this.svgPaths = {
+                success: "M17.5,42.3l23.2-23.2L23.9,35.9l-17-17c3.4-8.1,11.3-13.7,20.6-13.7c12.3,0,22.3,10,22.3,22.3 s-10,22.3-22.3,22.3S5.2,39.8,5.2,27.5c0-3.1,0.6-6,1.7-8.6",
+                error: "M15.8,39.2l23.4-23.4v23.4L11.7,11.7c4-4,9.6-6.5,15.8-6.5c12.3,0,22.3,10,22.3,22.3s-10,22.3-22.3,22.3 S5.2,39.8,5.2,27.5c0-6.2,2.5-11.8,6.6-15.8"
+            }
+
+            this._onIteration = (e) => {
+                if(this.spinning) {
+                    if(this.spinning > 1) {
+                        this.element.classList.remove("loading");
+                    } else {
+                        if(this.state === true) {
+                            this.element.classList.add("success");
+                        } else if(this.state === false) {
+                            this.element.classList.add("error");
+                        }
+
+                        if(this.state !== null) {
+                            this.spinning ++;
+                        }
+                    }
+                }
+            }
+            this.element.addEventListener("animationiteration", this._onIteration);
+            this.element.querySelector('.loader-path').addEventListener('animationend', this.animationEndCallback)
+        }
+
+        resetIt() {
+            this.error = '';
+            this.element.classList.remove("success", "error");
+            this.element.classList.add("loading");
+            this.spinning = 0;
+            this.state = null;
+        }
+
+        trueIt(callback = this.animationEndCallback) {
+            if(this.state !== true) {
+                if(this.state === false) this.resetIt();
+                this.spinning = 1;
+                this.state = true;
+                this.element.querySelector('.loader-path').setAttribute("d", this.svgPaths.success);
+                this.animationEndCallback = callback;
+            }
+        }
+
+        falseIt(error = '', callback = this.animationEndCallback) {
+            if(this.state !== false) {
+                this.error = error;
+                if(this.state === true) this.resetIt();
+                this.spinning = 1;
+                this.state = false;
+                this.element.querySelector('.loader-path').setAttribute("d", this.svgPaths.error);
+                this.animationEndCallback = callback;
+            }
+        }
+    }
+
+    const loader = new Loader(document.querySelector('.loader'))
+
+</script>
 
 <script>
     const download = (path, filename) => {
@@ -20,23 +212,25 @@
         document.body.removeChild(anchor);
     };
 
-    const statusNode = document.getElementById('status');
     const searchParams = new URLSearchParams(window.location.search);
 
-    if (!searchParams.has('id')) statusNode.innerText = 'GET parameter missing: id';
+    if (!searchParams.has('id')) loader.falseIt('GET parameter missing: id');
     else {
         const id = searchParams.get('id');
 
         const uri = `https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`;
         fetch(uri)
             .then(async response => {
-                if (response.status !== 200) return statusNode.innerText = 'Invalid plugin id';
+                await new Promise(r => setTimeout(r, 1000)); // forget you saw it
+                if (response.status !== 200) return loader.falseIt('Invalid plugin id');
 
                 const data = await response.text();
                 const blob = new Blob([data], { type: 'application/javascript' });
                 const url = URL.createObjectURL(blob);
                 download(url, `${id}.plugin.js`);
                 URL.revokeObjectURL(url);
+
+                loader.trueIt();
             });
     }
 </script>
