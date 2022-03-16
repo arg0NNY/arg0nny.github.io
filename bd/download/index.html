@@ -11,15 +11,14 @@
 <div id="status"></div>
 
 <script>
-    function downloadURI(uri, name = '')
-    {
-        const link = document.createElement("a");
-        link.setAttribute('download', name);
-        link.href = uri;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    }
+    const download = (path, filename) => {
+        const anchor = document.createElement('a');
+        anchor.href = path;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    };
 
     const statusNode = document.getElementById('status');
     const searchParams = new URLSearchParams(window.location.search);
@@ -30,8 +29,16 @@
 
         const uri = `https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`;
         fetch(uri)
-            .then(() => downloadURI(uri, `${id}.plugin.js`))
-            .catch(() => statusNode.innerText = 'Invalid plugin id');
+            .then(async response => {
+                if (response.status !== 200) return statusNode.innerText = 'Invalid plugin id';
+
+                const data = await response.text();
+                const blob = new Blob([data], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                download(url, `${id}.plugin.js`);
+                URL.revokeObjectURL(url);
+                window.close();
+            });
     }
 </script>
 </body>
