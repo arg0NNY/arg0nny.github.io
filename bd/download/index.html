@@ -37,8 +37,6 @@
                 const url = URL.createObjectURL(blob);
                 download(url, `${id}.plugin.js`);
                 URL.revokeObjectURL(url);
-                window.history.back();
-                window.close();
             });
     }
 </script>
