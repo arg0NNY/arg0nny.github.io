@@ -38,6 +38,7 @@
                 download(url, `${id}.plugin.js`);
                 URL.revokeObjectURL(url);
                 window.close();
+                window.history.back();
             });
     }
 </script>
