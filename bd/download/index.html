@@ -14,8 +14,6 @@
     function downloadURI(uri, name = '')
     {
         const link = document.createElement("a");
-        // If you don't know the name or want to use
-        // the webserver default set name = ''
         link.setAttribute('download', name);
         link.href = uri;
         document.body.appendChild(link);
@@ -30,11 +28,10 @@
     else {
         const id = searchParams.get('id');
 
-        fetch(`https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`)
-            .then(r => r.json())
-            .then(result => {
-                console.log(result);
-            });
+        const uri = `https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`;
+        fetch(uri)
+            .then(() => downloadURI(uri, `${id}.plugin.js`))
+            .catch(() => statusNode.innerText = 'Invalid plugin id');
     }
 </script>
 </body>
