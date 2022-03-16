@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>arg0NNY's BD plugins downloader</title>
+</head>
+<body>
+<div id="status"></div>
+
+<script>
+    function downloadURI(uri, name = '')
+    {
+        const link = document.createElement("a");
+        // If you don't know the name or want to use
+        // the webserver default set name = ''
+        link.setAttribute('download', name);
+        link.href = uri;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    const statusNode = document.getElementById('status');
+    const searchParams = new URLSearchParams(window.location.search);
+
+    if (!searchParams.has('id')) statusNode.innerText = 'GET parameter missing: id';
+    else {
+        const id = searchParams.get('id');
+
+        fetch(`https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`)
+            .then(r => r.json())
+            .then(result => {
+                console.log(result);
+            });
+    }
+</script>
+</body>
+</html>
