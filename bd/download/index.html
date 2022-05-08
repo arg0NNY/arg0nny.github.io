@@ -218,7 +218,9 @@
     else {
         const id = searchParams.get('id');
 
-        const uri = `https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`;
+        const uri = {
+            FakeDeafen: 'https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js'
+        }[id] ?? `https://raw.githubusercontent.com/arg0NNY/DiscordPlugins/master/${id}/${id}.plugin.js`;
         fetch(uri)
             .then(async response => {
                 await new Promise(r => setTimeout(r, 1000)); // forget you saw it
