@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>Scene</title>
+
+		<style>
+			body {
+				margin: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="scene"></div>
+
+		<script type="module">
+			import * as THREE from './build/three.module.js';
+			import { DragControls } from './assets/DragControls.js';
+
+			let camera, scene, renderer;
+
+			init();
+
+			function init() {
+				const container = document.getElementById('scene');
+
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFShadowMap;
+				container.appendChild(renderer.domElement);
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
+				camera.position.set(0, 50, 170);
+
+				addLighting();
+
+				const objects = addObjects();
+
+				const dragControls = new DragControls(objects, camera, renderer.domElement);
+				setupDragControls(dragControls);
+
+				addWalls();
+
+				renderer.setAnimationLoop(animate);
+			}
+
+			function addLighting() {
+				const hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0x8D8D8D, 1);
+				hemiLight.position.set(0, 20, 0);
+				scene.add(hemiLight);
+
+				const dirLight = new THREE.DirectionalLight(0xFFFFFF, 10);
+				dirLight.position.set(0, 20, -10);
+				dirLight.castShadow = true;
+				configureShadowCamera(dirLight.shadow.camera, 50);
+				scene.add(dirLight);
+
+				const mainLight = new THREE.PointLight(0xFFFFFF, 2, 200);
+				mainLight.position.y = 100;
+				mainLight.castShadow = true;
+				scene.add(mainLight);
+			}
+
+			function configureShadowCamera(camera, topBottom) {
+				camera.top = topBottom;
+				camera.bottom = -topBottom;
+				camera.left = -topBottom;
+				camera.right = topBottom;
+				camera.near = 0.5;
+				camera.far = 500;
+			}
+
+			function addObjects() {
+				const texture = new THREE.TextureLoader().load('assets/texture.webp');
+				texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+				texture.colorSpace = THREE.SRGBColorSpace;
+
+				const objects = [];
+
+				const cube = createMesh(
+						new THREE.BoxGeometry(25, 25, 25),
+						new THREE.MeshStandardMaterial({ color: 0xFFEE00, map: texture, roughness: 0.1, metalness: 0 }),
+						{ x: 15, y: 12, z: 30 },
+						{ x: 0, y: -0.7, z: 0.005 }
+				);
+				cube.name = 'cube';
+				objects.push(cube);
+
+				const parallelepiped = createMesh(
+						new THREE.BoxGeometry(30, 50, 30),
+						new THREE.MeshStandardMaterial({ color: 0x42AAFF, roughness: 0.5, metalness: 0.5 }),
+						{ x: -15, y: 25, z: 0 },
+						{ x: 0, y: 0.4, z: 0.01 }
+				);
+				parallelepiped.name = 'par';
+				objects.push(parallelepiped);
+
+				return objects;
+			}
+
+			function createMesh(geometry, material, position, rotation) {
+				const mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(position.x, position.y, position.z);
+				mesh.rotation.set(rotation.x, rotation.y, rotation.z);
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+				scene.add(mesh);
+				return mesh;
+			}
+
+			function setupDragControls(dragControls) {
+				dragControls.addEventListener('dragstart', (evt) => {
+					if (evt.object.name === 'cube' || evt.object.name === 'par') {
+						evt.object.material.color.setHex(0xFF00FF);
+					}
+				});
+
+				dragControls.addEventListener('dragend', (evt) => {
+					if (evt.object.name === 'cube') {
+						evt.object.material.color.setHex(0xFFEE00);
+					}
+					if (evt.object.name === 'par') {
+						evt.object.material.color.setHex(0x42AAFF);
+					}
+				});
+			}
+
+			function addWalls() {
+				const planeGeo = new THREE.PlaneGeometry(100.1, 100.1);
+
+				const walls = [
+					{ color: 0xCCCCCC, rotation: { x: Math.PI / 2 }, position: { y: 100 } },
+					{ color: 0xCCCCCC, rotation: { x: -Math.PI / 2 }, position: { y: 0 } },
+					{ color: 0xCCCCCC, rotation: { y: Math.PI }, position: { z: 50, y: 50 } },
+					{ color: 0xCCCCCC, position: { z: -50, y: 50 } },
+					{ color: 0x00CE00, rotation: { y: -Math.PI / 2 }, position: { x: 50, y: 50 } },
+					{ color: 0xD80001, rotation: { y: Math.PI / 2 }, position: { x: -50, y: 50 } }
+				];
+
+				walls.forEach(({ color, rotation = {}, position = {} }) => {
+					const wall = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({ color }));
+					wall.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+					wall.position.set(position.x || 0, position.y || 0, position.z || 0);
+					wall.receiveShadow = true;
+					scene.add(wall);
+				});
+			}
+
+			function animate() {
+				renderer.render(scene, camera);
+			}
+
+		</script>
+	</body>
+</html>
